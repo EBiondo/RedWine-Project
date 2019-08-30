@@ -1,0 +1,360 @@
+---
+title: "Projeto - Red Wine Analisys"
+author: "Eleandro Angelo Biondo"
+date: "23 de julho de 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Projeto - Red Wine Analisys
+
+Foi escolhido o dataset de vinhos tintos para análise pelo interesse que o tema desperta. Sempre se busca através da análise dos elementos químicos traçar uma correlação entre sua presença quantitativa e a qualidade do vinho. 
+
+Neste conjunto de dados foram analisados 1599 vinhos tintos e avaliados pela sua qualidade sensorial em notas que variam de 1 até 10. 
+
+Como é natural, o enfoque da análise levará em conta a qualidade, que no fim das contas é o que determina o preço e a demanda do produto.
+
+```{r echo=FALSE}
+library(ggplot2)
+library(GGally)
+library(memisc)
+library(gridExtra)
+```
+# Primeira visão do dados
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+getwd()
+redWines = read.csv('wineQualityReds.csv', check.names = FALSE, row.names = 1)
+
+head(redWines)
+```
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+summary(redWines)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+str(redWines)
+```
+# Sessao de gráficos com dados univariados
+
+Visão dos dados através de histogramas.
+
+Com tantas variáveis, inicialmente, seria adequado que fosse feita a visualização da distribuição dos vinhos observados por qualidade e então por cada uma das demais variáveis, de forma a se ter uma ideia da existência de simetria na distribuições observável pelo histograma.
+
+Em alguns histogramas foram aplicadas limitações nos eixos X e Y de modo a excluir os outliers, assim como no histograma de dióxido de enxofre foi aplicada a camada da escala logaritmica no eixo X.
+
+Os histogramas com base nos dados do modo como se encontram, de modo geral, não permitem concluir que qualquer das variáveis segue a mesma distribuição aplicável a qualidade, sendo, portanto, recomendável o tratamento dos dados.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ggplot2)
+# histograma com binwidth = 1 para que se tenha uma visão da distribuição da qualidade dos vinhos da amostra, considerando-se que uma observação é uma garrafa. 
+ggplot(aes(quality), data = redWines) + geom_histogram(binwidth = 1, color='blue')
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(alcohol), data=redWines) + geom_histogram(binwidth=0.05, color='blue')
+```
+Histograma do pH limitado no eixo X para excluir excluir os outliers. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(pH), data=redWines) + geom_histogram(binwidth=0.01, color='blue') + xlim(2.9,3.75)
+```
+Histograma dos sulfatos ajustado no eixo X para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(sulphates), data=redWines) + geom_histogram(binwidth=0.01, color='blue') + xlim(0.3,1.3)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(density), data=redWines) + geom_histogram(binwidth=0.001, color='blue')
+```
+Histograma do dióxido de enxofre ajustado no êxito X para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+sulfur = ggplot(aes(total.sulfur.dioxide), data=redWines) + geom_histogram(binwidth=1, color='blue') + xlim(0,150)
+
+sulfur_log = ggplot(aes(total.sulfur.dioxide), data=redWines) + geom_histogram(binwidth=0.1, color='blue') + xlim(0,150) + scale_x_log10()
+
+grid.arrange(sulfur, sulfur_log)
+```
+Histograma do dióxido de enxofre livre limitado nos eixo X e Y para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(free.sulfur.dioxide), data=redWines) + geom_histogram(binwidth=1, color='blue') + xlim(0,50) + ylim(0,105)
+```
+Histograma dos cloretos limitado no eixo X para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(chlorides), data=redWines) + geom_histogram(binwidth=0.001, color='blue') + xlim(0.05,0.125)
+```
+Histograma do açucar residual ajustado no eixo X para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(residual.sugar), data=redWines) + geom_histogram(binwidth=0.1, color='blue') + xlim(1.2,4)
+```
+Histograma do ácido cítrico ajustado nos eixos X e Y para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(citric.acid), data=redWines) + geom_histogram(binwidth=0.01, color='blue') + xlim(0,0.8) + ylim(0,75)
+
+```
+
+Histograma da acidez volátil ajustada no eixo X para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(volatile.acidity), data=redWines) + geom_histogram(binwidth=0.01, color='blue') + xlim(0,1)
+```
+
+Histograma da acidez fixada ajustada no eixo X para excluir os outliers.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(fixed.acidity), data=redWines) + geom_histogram(binwidth=0.1, color='blue') + xlim(5,13)
+```
+
+# Correlação
+
+Os gráficos de correlação vão demonstrar com base nos dados brutos a existência de tendência entre o acréscimo ou decréscimo da qualidade e a presença maior ou menor de variáveis no vinho.
+
+```{r echo=FALSE}
+#correlation between quality vs pH
+cor_quality_pH <- cor.test(redWines$quality, redWines$pH, method = c('pearson'))
+cor_quality_pH
+```
+
+
+```{r echo=FALSE}
+#correlation between quality vs alcohol
+cor_quality_alcohol <- cor.test(redWines$quality, redWines$alcohol, method = c('pearson'))
+cor_quality_alcohol
+```
+
+```{r echo=FALSE}
+#correlation between quality vs chlorides
+cor_quality_chlorides <- cor.test(redWines$quality, redWines$chlorides, method = c('pearson'))
+cor_quality_chlorides
+```
+```{r echo=FALSE}
+#correlation between quality vs fixed_acidity
+cor_fixed_ac <- cor.test(redWines$quality, redWines$fixed.acidity, method = c('pearson'))
+cor_fixed_ac
+```
+```{r echo=FALSE}
+#correlation between quality vs volatile_acidity
+cor_volatile_ac <- cor.test(redWines$quality, redWines$volatile.acidity, method = c('pearson'))
+cor_volatile_ac
+```
+```{r echo=FALSE}
+#correlation between quality vs citric_acid
+cor_citric_ac <- cor.test(redWines$quality, redWines$citric.acid, method = c('pearson'))
+cor_citric_ac
+```
+```{r echo=FALSE}
+#correlation between quality vs residual_sugar
+cor_residual_sg <- cor.test(redWines$quality, redWines$residual.sugar, method = c('pearson'))
+cor_residual_sg
+```
+```{r echo=FALSE}
+#correlation between quality vs free_sulfur_dioxide
+cor_free_sd <- cor.test(redWines$quality, redWines$free.sulfur.dioxide, method = c('pearson'))
+cor_free_sd
+```
+```{r echo=FALSE}
+#correlation between quality vs total_sulfur_dioxide
+cor_total_sd <- cor.test(redWines$quality, redWines$total.sulfur.dioxide, method = c('pearson'))
+cor_total_sd
+```
+```{r echo=FALSE}
+#correlation between quality vs density
+cor_density <- cor.test(redWines$quality, redWines$density, method = c('pearson'))
+cor_density
+```
+```{r echo=FALSE}
+#correlation between quality vs sulphates
+cor_sulphates <- cor.test(redWines$quality, redWines$sulphates, method = c('pearson'))
+cor_sulphates
+```
+
+```{r echo=FALSE, fig.height=10, fig.width=10}
+alc = ggplot(aes(y=alcohol, x=quality), data = redWines) + geom_point() +
+  geom_smooth(method = 'lm', color='red')
+ph = ggplot(aes(y=pH, x=quality), data = redWines) + geom_point() +
+  geom_smooth(method = 'lm', color='red')
+den = ggplot(aes(y=density, x=quality), data = redWines) + geom_point() + 
+  geom_smooth(method = 'lm', color='red')
+tsd = ggplot(aes(y=total.sulfur.dioxide, x=quality), data = redWines) + geom_point() + geom_smooth(method = 'lm', color='red')
+fsd = ggplot(aes(y=free.sulfur.dioxide, x=quality), data = redWines) + geom_point() + geom_smooth(method = 'lm', color='red')
+chlo = ggplot(aes(y=chlorides, x=quality), data = redWines) + geom_point() + 
+  geom_smooth(method = 'lm', color='red')
+rsg = ggplot(aes(y=residual.sugar, x=quality), data = redWines) + geom_point() +
+  geom_smooth(method = 'lm', color='red')
+volac = ggplot(aes(y=volatile.acidity, x=quality), data = redWines) + geom_point() + geom_smooth(method = 'lm', color='red')
+fixa = ggplot(aes(y=fixed.acidity, x=quality), data = redWines) + geom_point() +
+  geom_smooth(method = 'lm', color='red')
+citr = ggplot(aes(y=citric.acid, x=quality), data = redWines) + geom_point() +
+  geom_smooth(method = 'lm', color='red')
+sulp = ggplot(aes(y=sulphates, x=quality), data = redWines) + geom_point() +
+  geom_smooth(method = 'lm', color='red')
+
+grid.arrange(alc, ph, den, tsd, fsd, chlo, rsg, volac, fixa, citr, sulp, ncol=4, nrow=3)
+
+
+```
+
+Observa-se que a qualidade vista de modo geral nao está correlacionada fortemente com nenhum dos componentes químicos do vinho tinto que compõem a amostra. Seria, então, mais eficiente dividir a qualidade em três classes: bom, médio e ruim, sendo ruim aquele vinho com nota quatro ou menos, bom o vinho com nota 7 ou superior e médio os demais.
+
+```{r echo=FALSE}
+redWines$quality_rw<-factor(ifelse(redWines$quality<=4,'ruim',ifelse(redWines$quality>=7,"bom","médio")),levels = c("ruim","médio","bom"))
+
+table(redWines$quality_rw)
+```
+Surpreende o fato de que há mais vinhos classificados como bons, ou seja, com nota de oito para cima, que vinhos classificados como ruins. Percentualmente, os vinhos bons representam 13,58%, os vinhos médios 82,49% e os vinhos ruins 3,93%.
+
+Como visto dos coeficientes de correlação extraídos acima, relativamente as correlações positivas, nenhuma supera o coeficiente de 0.5, de modo que não se pode afirmar que exista uma forte correlação entre a presença de acido citrico, álcool, acidez fixada e sulfatos e a qualidade. 
+
+Antes de analisar a correlação entre as variáveis cujos coeficientes de correlação se mostram positivos em relação à qualidade, é de se investigar se a correlação se mantém quando se extraem os coeficientes contemplam as categorias de qualidade baixo, médio e bom.
+
+```{r echo=FALSE}
+#correlation between qualities vs sulphates
+with(subset(redWines, quality_rw == 'ruim'), cor.test(quality, sulphates))
+
+with(subset(redWines, quality_rw == 'médio'), cor.test(quality, sulphates))
+
+with(subset(redWines, quality_rw == 'bom'), cor.test(quality, sulphates))
+```
+```{r echo=FALSE}
+with(subset(redWines, quality_rw == 'ruim'), cor.test(quality, alcohol))
+
+with(subset(redWines, quality_rw == 'médio'), cor.test(quality, alcohol))
+
+with(subset(redWines, quality_rw == 'bom'), cor.test(quality, alcohol))
+```
+
+```{r echo=FALSE}
+with(subset(redWines, quality_rw == 'ruim'), cor.test(quality, citric.acid))
+
+with(subset(redWines, quality_rw == 'médio'), cor.test(quality, citric.acid))
+
+with(subset(redWines, quality_rw == 'bom'), cor.test(quality, citric.acid))
+```
+
+```{r echo=FALSE}
+with(subset(redWines, quality_rw == 'ruim'), cor.test(quality, fixed.acidity))
+
+with(subset(redWines, quality_rw == 'médio'), cor.test(quality, fixed.acidity))
+
+with(subset(redWines, quality_rw == 'bom'), cor.test(quality, fixed.acidity))
+```
+Nota-se que o maior coeficiente de correlação encontra-se na categoria dos vinhos de qualidade média.
+
+
+# Trabalhando com duas variáveis
+
+Feita a divisão dos vinhos em categorias, é possível investigar se a correlação do modo acima visto se mantém para cada uma das classes. Com efeito, será feita a análise gráfica da existência de correlação positiva entre a presença maior de álcool e a qualidade e a correlação negativa entre os níveis de pH e a qualidade, em cada uma das categorias: boa, média ou ruim.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+ggplot(aes(x=alcohol, y=citric.acid, color=
+             quality_rw), data=redWines) +
+  geom_point(position=position_jitter(), size=1.5,) +
+  scale_color_brewer(type='qual') + geom_smooth(method = 'lm', color='red') +
+  facet_wrap(~quality_rw)
+  
+```
+
+```{r}
+ggplot(aes(x=fixed.acidity, y=citric.acid, color=quality_rw), data=redWines) +
+  geom_point(position=position_jitter(), size=1.3,) +
+  scale_color_brewer(type='qual') + geom_smooth(method = 'lm', color='red') +
+  facet_wrap(~quality_rw)
+```
+
+```{r}
+ggplot(aes(x=fixed.acidity, y=alcohol, color=quality_rw), data=redWines) +
+  geom_point(position=position_jitter(), size=1.3,) +
+  scale_color_brewer(type='qual') + geom_smooth(method = 'lm', color='red') + 
+  facet_wrap(~quality_rw)
+```
+
+```{r}
+ggplot(aes(x=alcohol, y=sulphates, color=quality_rw), data=redWines) +
+  geom_point(position=position_jitter(), size=1.0,) +
+  scale_color_brewer(type='qual') + geom_smooth(method = 'lm', color='red') +
+  facet_wrap(~quality_rw)
+```
+
+```{r}
+ggplot(aes(x=sulphates, y=citric.acid, color=quality_rw), data=redWines) +
+  geom_point(position=position_jitter(), size=1.0,) +
+  scale_color_brewer(type='qual') + geom_smooth(method = 'lm', color='red') + 
+  facet_wrap(~quality_rw)
+```
+
+```{r}
+ggplot(aes(x=sulphates, y=fixed.acidity, color=quality_rw), data=redWines) +
+  geom_point(position=position_jitter(), size=1.0,) +
+  scale_color_brewer(type='qual') + geom_smooth(method = 'lm', color='red') + 
+  facet_wrap(~quality_rw)
+```
+
+Ficou claro que ao menos as variáveis: sulfatos, ácido citrico e acidez fixada mantém forte correlação entre si, em qualquer das categorias da qualidade do vinho.
+
+É interessante procurar correlação entre as demais variáveis de modo a observar se uma outra substância exerce alguma forma de influência sobre a outra, especialmente as substância que tem correlação direta com o aumento da qualidade do vinho. Para atingir esta finalidade será usada a função ggpairs().
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+rw.subset <- redWines[,1:12]
+ggpairs(rw.subset, wrap=list(size=4), lower=list(continuous=wrap('points',shape = I('.'))), upper=list(combo=wrap('box', outlier.shape = I('.'))))+
+ theme(legend.position = "none",
+ panel.grid.major = element_blank(),
+ axis.ticks = element_blank(), 
+panel.border = element_rect(linetype = "dashed", colour = "black", fill = NA))
+```
+
+Pela visão geral das correlações existentes entre as diversas variáveis de acordo com o gráfico obtido pela função ggpairs observa-se a existência de forte correlação, tanto positiva quanto negativa, entre diversos elementos, notadamente, o pH (acido citrico e acidez fixada), densidade (álcool) e a relação entre a qualidade o acido citrico e a acidez fixada.
+
+# Gráficos finais e Sumário
+
+```{r echo=FALSE}
+ggplot(data=redWines, aes(x=pH, y=citric.acid, color=quality_rw))+ geom_point()+ geom_smooth(method='lm', se=FALSE)
+```
+
+No gráfico acima percebe-se claramente que para os vinhos de boa qualidade a presença do pH é baixa enquanto a do acido cítrico é alta.
+
+```{r echo=FALSE}
+ggplot(data=redWines, aes(x=pH, y=fixed.acidity, color=quality_rw))+ geom_point()+ geom_smooth(method='lm', se=FALSE)
+```
+
+De igual forma ao que ocorre na relação pH versus ácido cítrico, para os vinhos bons quanto maior é a acidez fixada verificada nos vinhos de boa qualidade menor é o seu pH.
+
+```{r echo=FALSE}
+ggplot(data=redWines, aes(x=citric.acid, y=fixed.acidity, color=quality_rw))+ geom_point()+ geom_smooth(method='lm', se=FALSE)
+```
+
+A correlação entre a presença do ácido cítrico e a acidez fixada no vinho de boa qualidade é positiva, destacando-se que a menor acidez fixada está relacionada a maior quantidade de ácido cítrico, fato que, aparentemente, aponta no sentido de que o nível de pH do vinho deve ser baixo para que se obtenha uma boa qualidade, uma vez que a acidez fixada está relacionada negativamente ao pH.
+
+
+```{r echo=FALSE}
+ggplot(data=redWines, aes(x=density, y=alcohol, color=quality_rw))+ geom_point()+ geom_smooth(method='lm', se=FALSE)
+```
+
+Como verificado anteriormente, a maior qualidade do vinho está relacionada a maior quantidade de álcool em sua composição, contudo, a densidade mais alta do líquido implica em menores quantidade de álcool, de modo que para se obter um vinho de boa qualidade a densidade não pode ser alta. Contudo, os especialistas definem que um bom vinho deve ter um corpo médio (de acordo com os graus de densidade, da mais baixa para a mais alta = ralo, leve, médio, encorpado e pesado) para agradar ao paladar, o que significa que a densidade ideal deveria, ao que tudo indica, estar entre 0.9925 e 0.9975.
+
+```{r}
+qplot(x = quality_rw, y = alcohol, data = redWines, geom = 'boxplot', xlab= 'qualidade', ylab='álcool')
+```
+```{r}
+by(redWines$alcohol, redWines$quality, summary)
+
+```
+
+
+Em conclusao, com base nas informaçoes disponíveis nos rótulos de vinhos ao consumidor, que se constitui basicamente, na graduaçao alcólica, uma boa compra terá alta chance de sucesso se for observada a graduaçao alcólica igual ou acima de 12.15.
+
+Fim da análise.
+
+Obrigado!
+
